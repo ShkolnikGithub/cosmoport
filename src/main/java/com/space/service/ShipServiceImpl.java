@@ -3,6 +3,9 @@ package com.space.service;
 import com.space.model.Ship;
 import com.space.repository.ShipRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,5 +49,37 @@ public class ShipServiceImpl implements ShipService {
     public void update(Long id) {
         shipRepository.flush();
     }
+
+
+
+    /**++++++++++++++  My experiments  +++++++++++++++++*/
+
+
+
+    @Override
+    public List<Ship> getAllShips() {
+        return null;
+    }
+
+    @Override
+    public void saveShip(Ship ship) {
+
+    }
+
+    @Override
+    public Ship getShipById(long id) {
+        return null;
+    }
+
+    @Override
+    public void deleteShipById(long id) {
+
+    }
+
+    @Override
+    public Page<Ship> findAllShips(Pageable pageable) {
+        return this.shipRepository.findAll(pageable);
+    }
+
 }
 

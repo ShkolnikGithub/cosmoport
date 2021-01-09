@@ -4,8 +4,13 @@ import com.space.model.Ship;
 import com.space.model.ShipType;
 import com.space.service.ShipService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -24,10 +29,26 @@ public class ShipController {
     }
 
     @GetMapping
-    public List<Ship> getAllShips() {
-        ships = shipService.getAll();
-        return ships;
+    public List<Ship> getAllShips(
+            @RequestParam(value = "order", required = false, defaultValue = "ID") ShipOrder order,
+            @RequestParam(value = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "3") Integer pageSize,
+            Model model) {
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(order.getFieldName()));
+        Page<Ship> pageAll = shipService.findAllShips(pageable);
+
+        //Page<Ship> page = shipService.findAllShips(pageNumber, pageSize);
+        List<Ship> listShips = pageAll.getContent();
+
+        return listShips;
     }
+
+//    @GetMapping
+//    public List<Ship> getAllShips() {
+//        ships = shipService.getAll();
+//        return ships;
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<Ship> getShip(@PathVariable("id") Long id) {
@@ -170,5 +191,33 @@ public class ShipController {
     public double isUsed(Boolean isUsed) {
         return isUsed ? 0.5 : 1.0;
     }
+
+
+    /**++++++++++++++  My experiments  +++++++++++++++++*/
+
+
+//    @GetMapping("/page/{pageNumber}")
+//    public List<Ship> findPaginated(
+////            @PathVariable(value = "pageNo") int pageNo, Model model
+//            @RequestParam(value = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
+//            @RequestParam(value = "pageSize", required = false, defaultValue = "3") Integer pageSize,
+//            Model model
+//
+//    ) {
+////        int pageSize = 5;
+////        pageNo = 6;
+//
+//        Page<Ship> page = shipService.findPaginated(pageNumber, pageSize);
+//        List<Ship> listShips = page.getContent();
+//
+////        model.addAttribute("currentPage", pageNumber);
+////        model.addAttribute("totalPages", page.getTotalPages());
+////        model.addAttribute("totalItems", page.getTotalElements());
+////        model.addAttribute("listShips", listShips);
+//
+//        return listShips;
+//    }
+
+
 }
 
