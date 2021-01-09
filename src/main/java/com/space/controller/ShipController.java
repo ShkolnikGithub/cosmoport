@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -33,24 +34,36 @@ public class ShipController {
     }
 
     @GetMapping
-    public List<Ship> getAllShips(
+    public ResponseEntity<List<Ship>> getAllShips(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "planet", required = false) String planet,
+            @RequestParam(value = "shipType", required = false) ShipType shipType,
+            @RequestParam(value = "after", required = false) Long after,
+            @RequestParam(value = "before", required = false) Long before,
+            @RequestParam(value = "isUsed", required = false) Boolean isUsed,
+            @RequestParam(value = "minSpeed", required = false) Double minSpeed,
+            @RequestParam(value = "maxSpeed", required = false) Double maxSpeed,
+            @RequestParam(value = "minCrewSize", required = false) Integer minCrewSize,
+            @RequestParam(value = "maxCrewSize", required = false) Integer maxCrewSize,
+            @RequestParam(value = "minRating", required = false) Double minRating,
+            @RequestParam(value = "maxRating", required = false) Double maxRating,
             @RequestParam(value = "order", required = false, defaultValue = "ID") ShipOrder order,
             @RequestParam(value = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
             @RequestParam(value = "pageSize", required = false, defaultValue = "3") Integer pageSize) {
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(order.getFieldName()));
-        Page<Ship> pageAll = shipService.findAllShips(pageable);
 
-        List<Ship> listShips = pageAll.getContent();
+        Specification<Ship> specification = Specification.where(shipService.selectByName(name)
+                .and(shipService.selectByPlanet(planet))
+                .and(shipService.selectByProdDate(after, before))
+                .and(shipService.selectByUse(isUsed))
+                .and(shipService.selectBySpeed(minSpeed, maxSpeed))
+                .and(shipService.selectByCrewSize(minCrewSize, maxCrewSize))
+                .and(shipService.selectByShipType(shipType))
+                .and(shipService.selectByRating(minRating, maxRating)));
 
-        return listShips;
+        return new ResponseEntity<>(shipService.getShipsList(specification, pageable).getContent(), HttpStatus.OK);
     }
-
-//    @GetMapping
-//    public List<Ship> getAllShips() {
-//        ships = shipService.getAll();
-//        return ships;
-//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<Ship> getShip(@PathVariable("id") Long id) {
@@ -65,8 +78,29 @@ public class ShipController {
     }
 
     @GetMapping("/count")
-    public int getCount() {
-        return (int) shipService.getCount();
+    public ResponseEntity<Integer> getCount(@RequestParam(value = "name", required = false) String name,
+                                            @RequestParam(value = "planet", required = false) String planet,
+                                            @RequestParam(value = "shipType", required = false) ShipType shipType,
+                                            @RequestParam(value = "after", required = false) Long after,
+                                            @RequestParam(value = "before", required = false) Long before,
+                                            @RequestParam(value = "isUsed", required = false) Boolean isUsed,
+                                            @RequestParam(value = "minSpeed", required = false) Double minSpeed,
+                                            @RequestParam(value = "maxSpeed", required = false) Double maxSpeed,
+                                            @RequestParam(value = "minCrewSize", required = false) Integer minCrewSize,
+                                            @RequestParam(value = "maxCrewSize", required = false) Integer maxCrewSize,
+                                            @RequestParam(value = "minRating", required = false) Double minRating,
+                                            @RequestParam(value = "maxRating", required = false) Double maxRating) {
+
+        Specification<Ship> specification = Specification.where(shipService.selectByName(name)
+                .and(shipService.selectByPlanet(planet))
+                .and(shipService.selectByShipType(shipType))
+                .and(shipService.selectByProdDate(after, before))
+                .and(shipService.selectByUse(isUsed))
+                .and(shipService.selectBySpeed(minSpeed, maxSpeed))
+                .and(shipService.selectByCrewSize(minCrewSize, maxCrewSize))
+                .and(shipService.selectByRating(minRating, maxRating)));
+
+        return new ResponseEntity<>(shipService.getShipsCount(specification), HttpStatus.OK);
     }
 
     @PostMapping
