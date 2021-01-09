@@ -81,8 +81,6 @@ public class Ship {
         return planet;
     }
 
-//    public Ship() {}
-
     public void setPlanet(String planet) {
         this.planet = planet;
     }

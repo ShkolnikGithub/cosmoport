@@ -1,32 +1,28 @@
 package com.space.controller;
 
-import com.space.exceptions.BadRequestException;
 import com.space.model.Ship;
 import com.space.model.ShipType;
 import com.space.service.ShipService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 @RestController
 @RequestMapping("/rest/ships")
 public class ShipController {
-    private ShipService shipService;
+    private final ShipService shipService;
     public static long counter;
-    private List<Ship> ships;
 
     @Autowired
     public ShipController(ShipService shipService) {
@@ -105,7 +101,7 @@ public class ShipController {
 
     @PostMapping
     public ResponseEntity<Ship> createShip(@RequestParam(defaultValue = "false") Boolean isUsed,
-                                       @RequestBody Ship ship) {
+                                           @RequestBody Ship ship) {
         if (ship.getName() == null
                 || ship.getPlanet() == null
                 || ship.getShipType() == null
@@ -119,6 +115,10 @@ public class ShipController {
             ship.setUsed(isUsed);
         }
 
+        Calendar calendar = new GregorianCalendar();
+        calendar.setTime(ship.getProdDate());
+        int year = calendar.get(Calendar.YEAR);
+
         if (ship.getName().length() == 0
                 || ship.getName().length() > 50
                 || ship.getPlanet().length() == 0
@@ -127,8 +127,8 @@ public class ShipController {
                 || ship.getSpeed() > 0.99
                 || ship.getCrewSize() < 1
                 || ship.getCrewSize() > 9999
-                || (ship.getProdDate().getYear() + 1900) < 2800
-                || (ship.getProdDate().getYear() + 1900) > 3019) {
+                || year < 2800
+                || year > 3019) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -140,7 +140,7 @@ public class ShipController {
 
     @PostMapping("/{id}")
     public ResponseEntity<Ship> updateShip(@PathVariable String id,
-                                       @RequestBody Ship ship) {
+                                           @RequestBody Ship ship) {
         Long longId = shipService.checkId(id);
         Ship newShip = shipService.update(longId, ship);
 
@@ -167,20 +167,5 @@ public class ShipController {
         rating = rating.setScale(2, RoundingMode.HALF_UP);
         return rating.doubleValue();
     }
-
-
-    /**++++++++++++++  My experiments
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     * +++++++++++++++++*/
-
-
 }
 
