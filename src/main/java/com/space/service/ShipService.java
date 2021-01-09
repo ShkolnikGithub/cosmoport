@@ -10,7 +10,7 @@ public interface ShipService {
 
     Ship getById(Long id);
 
-    void creat(Ship ship);
+    void create(Ship ship);
 
     void delete(Long id);
 
@@ -18,21 +18,13 @@ public interface ShipService {
 
     long getCount();
 
-    void update(Long id);
+    Ship update(Long id, Ship ship);
 
-
+    Ship getShip(Long id);
 
     /**++++++++++++++  My experiments  +++++++++++++++++*/
 
-
-
-    List<Ship> getAllShips();
-
-    void saveShip(Ship ship);
-
-    Ship getShipById(long id);
-
-    void deleteShipById(long id);
+    Long checkId(String id);
 
     Page<Ship> findAllShips(Pageable pageable);
 

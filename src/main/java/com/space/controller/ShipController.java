@@ -1,5 +1,6 @@
 package com.space.controller;
 
+import com.space.exceptions.BadRequestException;
 import com.space.model.Ship;
 import com.space.model.ShipType;
 import com.space.service.ShipService;
@@ -13,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -32,13 +36,11 @@ public class ShipController {
     public List<Ship> getAllShips(
             @RequestParam(value = "order", required = false, defaultValue = "ID") ShipOrder order,
             @RequestParam(value = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "3") Integer pageSize,
-            Model model) {
+            @RequestParam(value = "pageSize", required = false, defaultValue = "3") Integer pageSize) {
 
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(order.getFieldName()));
         Page<Ship> pageAll = shipService.findAllShips(pageable);
 
-        //Page<Ship> page = shipService.findAllShips(pageNumber, pageSize);
         List<Ship> listShips = pageAll.getContent();
 
         return listShips;
@@ -68,7 +70,7 @@ public class ShipController {
     }
 
     @PostMapping
-    public ResponseEntity<Ship> create(@RequestParam(defaultValue = "false") Boolean isUsed,
+    public ResponseEntity<Ship> createShip(@RequestParam(defaultValue = "false") Boolean isUsed,
                                        @RequestBody Ship ship) {
         if (ship.getName() == null
                 || ship.getPlanet() == null
@@ -96,127 +98,54 @@ public class ShipController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        Double rating = (80 * ship.getSpeed() * isUsed(ship.getUsed())) /
-                (3019 - (ship.getProdDate().getYear() + 1900) + 1);
-        ship.setRating(rating);
-        this.shipService.creat(ship);
+        ship.setRating(getRating(ship));
+        this.shipService.create(ship);
 
         return new ResponseEntity<>(ship, HttpStatus.OK);
     }
 
     @PostMapping("/{id}")
-    public ResponseEntity<Ship> update(@PathVariable(value = "id", required = false) Long id,
-                                       @RequestParam(value = "name", required = false) String name,
-                                       @RequestParam(value = "planet", required = false) String planet,
-                                       @RequestParam(value = "shipType", required = false) ShipType shipType,
-                                       @RequestParam(value = "prodDate", required = false) Date prodDate,
-                                       @RequestParam(value = "isUsed", required = false) Boolean isUsed,
-                                       @RequestParam(value = "speed", required = false) Double speed,
-                                       @RequestParam(value = "crewSize", required = false) Integer crewSize,
-                                       @RequestParam(value = "rating", required = false) Double rating,
-                                       @RequestBody(required = false) Ship newShip) {
+    public ResponseEntity<Ship> updateShip(@PathVariable String id,
+                                       @RequestBody Ship ship) {
+        Long longId = shipService.checkId(id);
+        Ship newShip = shipService.update(longId, ship);
 
-        if (id == null || newShip == null) {
-            return new ResponseEntity<>(HttpStatus.OK);
-        }
-
-        if (id < 1L) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        Ship ship = shipService.getById(id);
-        if (ship == null ) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-
-        if (name == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-
-        if (name != null) {
-            ship.setName(name);
-        }
-
-        if (planet != null) {
-            ship.setPlanet(planet);
-        }
-
-        if (shipType != null) {
-            ship.setShipType(shipType);
-        }
-
-        if (prodDate != null) {
-            ship.setProdDate(prodDate);
-        }
-
-        if (isUsed != null) {
-            ship.setUsed(isUsed);
-        }
-
-        if (speed != null) {
-            ship.setSpeed(speed);
-        }
-
-        if (crewSize != null) {
-            ship.setCrewSize(crewSize);
-        }
-
-        Double newRating = (80 * speed * isUsed(isUsed)) /
-                (3019 - (prodDate.getYear() + 1900) + 1);
-        ship.setRating(newRating);
-
-        shipService.update(id);
-
-        return new ResponseEntity<>(ship, HttpStatus.OK);
+        return new ResponseEntity<>(newShip, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Ship> delete(@PathVariable("id") Long id) {
-        if (id == null || id <= 0) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        ships = shipService.getAll();
-
-        for (long i = 0; i < ships.size(); i++) {
-            if (ships.get((int) i).getId() == id) {
-                shipService.delete(id);
-                return new ResponseEntity<>(HttpStatus.OK);
-            }
-        }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public ResponseEntity<?> deleteShipById(@PathVariable String id) {
+        Long longId = shipService.checkId(id);
+        shipService.delete(longId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     public double isUsed(Boolean isUsed) {
         return isUsed ? 0.5 : 1.0;
     }
 
+    public double getRating(Ship ship) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(ship.getProdDate());
+        int year = calendar.get(Calendar.YEAR);
+        BigDecimal rating = new BigDecimal((80 * ship.getSpeed() * (ship.getUsed() ? 0.5 : 1)) /
+                (3019 - year + 1));
+        rating = rating.setScale(2, RoundingMode.HALF_UP);
+        return rating.doubleValue();
+    }
 
-    /**++++++++++++++  My experiments  +++++++++++++++++*/
 
-
-//    @GetMapping("/page/{pageNumber}")
-//    public List<Ship> findPaginated(
-////            @PathVariable(value = "pageNo") int pageNo, Model model
-//            @RequestParam(value = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
-//            @RequestParam(value = "pageSize", required = false, defaultValue = "3") Integer pageSize,
-//            Model model
-//
-//    ) {
-////        int pageSize = 5;
-////        pageNo = 6;
-//
-//        Page<Ship> page = shipService.findPaginated(pageNumber, pageSize);
-//        List<Ship> listShips = page.getContent();
-//
-////        model.addAttribute("currentPage", pageNumber);
-////        model.addAttribute("totalPages", page.getTotalPages());
-////        model.addAttribute("totalItems", page.getTotalElements());
-////        model.addAttribute("listShips", listShips);
-//
-//        return listShips;
-//    }
+    /**++++++++++++++  My experiments
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     * +++++++++++++++++*/
 
 
 }
